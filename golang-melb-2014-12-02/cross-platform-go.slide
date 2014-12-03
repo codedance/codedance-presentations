@@ -1,0 +1,130 @@
+Cross-Platform Go
+2nd Dec 2014
+Tags: cross-platform, windows, mac, linux
+
+Chris Dance
+CEO, PaperCut Software
+
+chris.dance@papercut.com
+http://www.papercut.com/
+https://github.com/codedance/
+
+Illustrations by Tom Beresford
+
+* Why does cross-platform matter?
+.image img/why.png 370 _
+- Do you write software for others?
+- The world is full of platforms: Windows, Mac, Linux x86/ARM, distro of choice!
+- Everything else is... Python, Java, Node, C, PHP^H^H^H
+
+* Why is Go so good for x-platform dev?
+.image img/go-x-platform.png 370 _
+- *Pedigree* - C and Python influences
+- *Culture* - Zero dependency deployment, C interop
+- *Modern* - Developed in a time of peace and tolerance  :-)
+
+* ... but it's never easy!
+.image img/go-stop-go.png 370 _
+- Line endings
+- File paths
+- System calls ... and so much more "stuff"
+
+* Your tools to make Go go across platforms
+.image img/go-go.png 300 _
+- 1. Go's standard libary
+- 2. Conditional code
+- 3. Build constraints
+- 4. System calls via `cgo`
+
+* Tool 1: Conditional Code
+.play src/hosts.go /^func main/,/^}/
+
+* Have you seen this before?
+
+    #ifdef WIN32
+        QueryPerformanceCounter(&initialTv);
+    #else
+        gettimeofday(&initialTv, NULL);
+    #endif
+        while(vsource_started != 0) {
+            //
+            gettimeofday(&tv, NULL);
+            //if(pipe->client_count() <= 0) {
+            if(encoder_running() == 0) {
+    #ifdef WIN32
+                Sleep(1);
+    #else
+                usleep(1000);
+    #endif
+                continue;
+            }
+            data = pipe[0]->allocate_data();
+            frame = (vsource_frame_t*) data->ptr;
+    #ifdef __APPLE__
+            frame->pixelformat = PIX_FMT_RGBA;
+    #else
+            frame->pixelformat = PIX_FMT_BGRA;
+    #endif
+
+* Tool 2: Build Constraints
+os/path_windows.go
+
+.code src/path_windows.go
+
+- Define multiple files in format name_[platform].go
+- platform = windows, linux, darwin
+
+* Tool 2: Build Constraints Cont.
+
+*Build* *Flags* 
+    - a "magic" comment in a comment before package definition in any *.go file
+    - good when the same code applies to multiple targets
+    - still forces conditionals at file level
+
+    //  +build linux darwin
+
+This means build/include this file *only* on Linux and Mac
+
+* Tool 3: System Calls
+.image img/ram.png 400 _
+- Let's get the machine's physical RAM... easy right?
+- Every platform is different...
+
+
+* Tool 3: System Calls (cgo)
+Let's use "cgo" - a pseudo-package called "C" to call C functions
+
+    // #include <math.h>
+    // #include <errno.h>
+    import "C"
+
+    ...
+
+    n, := C.sqrt(4)
+
+    // err populated with errno
+    n, err := C.sqrt(-1)
+
+
+* Tool 3: System Calls Cont.
+File 1: `mem/memory.go`
+
+.code src/mem/memory.go
+
+* Tool 3: System Calls Cont.
+File 2: `mem/memory_windows.go`
+
+.code src/mem/memory_windows.go 
+
+* Tool 3: System Calls Cont.
+File 3: `mem/memory_darwin.go`
+
+.code src/mem/memory_darwin.go 
+
+* Tips
+- Prefer general tests rather than platform tests
+- Avoid the lure of cross-compile (testing! VMs are cheap)
+- Avoid `cgo` if you can (it's harder to debug)
+- Use the standard library src as your best-practice reference
+
+.image img/thanks.png 300 _
