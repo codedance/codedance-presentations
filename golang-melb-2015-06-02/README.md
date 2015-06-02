@@ -2,11 +2,11 @@
 
 Slides from my presentation at [Golang Melbourne](http://www.meetup.com/golang-mel/) on 2nd Jun 2015.
 
-Uses [Go Present](golang.org/x/tools/cmd/present)
+Uses [Go Present](http://golang.org/x/tools/cmd/present)
 
-    go get http://godoc.org/golang.org/x/tools/present
+    go install golang.org/x/tools/cmd/present
 
 ##View Online
 
-[Cross-Platform Go](http://go-talks.appspot.com/github.com/codedance/codedance-presentations/golang-melb-2015-06-02/golang-ten-things.slide)
+[Golang - 10 Things I Wish I Knew!](http://go-talks.appspot.com/github.com/codedance/codedance-presentations/golang-melb-2015-06-02/golang-ten-things.slide)
 
