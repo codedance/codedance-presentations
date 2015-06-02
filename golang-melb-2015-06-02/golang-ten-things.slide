@@ -1,0 +1,254 @@
+10 Things I Wish I Knew!
+2nd Jun 2015
+Tags: golang, learning, gotchas, 
+
+Chris Dance
+CEO, PaperCut Software
+
+chris.dance@papercut.com
+http://www.papercut.com/
+https://github.com/codedance/
+
+Illustrations by Tom Beresford
+
+* Select the logo
+
+Logo 1 - The Simple Gopher
+
+.image img/golang-mel-gopher-02.png 500 _
+
+* Learning a language in 2015
+.image img/language-easy-bit.png 400 _
+
+
+
+
+* LESSON 1: Variables and Goroutines
+Spot the bug?
+
+.code src/lesson1.go
+
+* LESSON 1: Variables and Goroutines
+.code src/lesson1-fix.go
+
+- It should be:
+    best = solution
+- Variable shadowing - No warning!
+- You love := so it's an easy habit!
+- Hard to debug!
+
+* LESSON 1: Variables and Goroutines
+
+    for val := range values {
+        go func() {
+            result := mylib.DoStuff(val)
+            fmt.Printf("%v = %v\n", val, result)
+        }()
+    }
+
+    for val := range values {
+        go func(val Value) {
+            result := mylib.DoStuff(val)
+            fmt.Printf("%v = %v\n", val, result)
+        }(val)
+    }
+- `val` changes each loop
+- Passing as a parameter is an easy way to ensure a copy
+- Again hard to debug!
+
+* LESSON 2: What's a slice?
+Spot the problem?
+
+    const maxMTU = 65507
+
+    func ReadCommand() ([]byte, error) {
+        resp := make([]byte, maxMTU)
+        n, err := udpconn.Read(resp)
+        if err != nil {
+            return resp, err
+        }
+        return resp[:n], err
+    }
+
+* LESSON 2: What's a slice?
+
+    const maxMTU = 65507
+
+    func ReadCommand() ([]byte, error) {
+        resp := make([]byte, maxMTU)
+        n, err := udpconn.Read(resp)
+        if err != nil {
+            return resp, err
+        }
+        // Copy before returning
+        resp = resp[:n]
+        respCopy := make([]byte, n)
+        copy(respCopy, resp)
+        return respCopy, nil
+    }
+
+- Slices are a window on an array
+- Any reference means array is not freed
+- Not an issue with short-lived variables
+- In this case we're not the consumer of ReadCommand() so we don't know
+
+* LESSON 3: Use defer
+
+    file, err := os.Open(filename)
+    if err != nil {
+        return "", err
+    }
+    defer file.Close()  // Close logic close to Open
+
+    scanner := bufio.NewScanner(file)
+    // ...
+
+Useful for:
+- Closing resources
+- Decrementing locks/mutexes
+- Println/log debugging return values
+
+* Select the logo
+
+Logo 2 - I Love Channels Gopher
+
+.image img/golang-mel-gopher-01.png 500 _
+
+* LESSON 4: Channels Patterns
+
+Channels are powerful. Learn the patterns.
+
+    input := make(chan int)
+    quit := make(chan int)
+
+    go func() {
+        for {
+            select {
+            case i := <-input:
+                    fmt.Printf("got %d", i)
+            case <-quit:
+                    fmt.Println("quit")
+                    return
+            }
+        }
+    }()
+
+    close(quit) // stop 
+
+- e.g. Reading from a closed channel returns immediately
+- e.g. Using WaitGroup to synchronize
+
+
+* LESSON 5: The standard lib is your library
+Read the book, not just the cover!
+
+.image img/reference-source.png 300 _
+
+- The standard library is well written and modern
+- Got a problem to solve? Think of library code that may provide a pattern
+
+* LESSON 6: Interfaces and mocking
+
+Which is better?
+
+    func ReadCommand(conn *net.Conn) string
+
+    func ReadCommand(conn io.Reader) string
+
+Learning how interfaces work makes code:
+
+- Self documenting
+- Less error prone
+- Easier to test
+
+Mocking:
+
+- It's an `io.Reader` - that's easy to Mock! 
+- I don't need to mock Close(), RemoteAddr(), etc. 
+
+
+* LESSON 7: Using io.Reader interface
+
+Readers and Writers are powerful... hard to wrap your head around at first.
+Invest the time!
+
+    type Reader interface {
+            Read(p []byte) (n int, err error)
+    }
+
+More fundamental than channels. Many powerful standard library classes:
+
+- `io.WriteString` - Write a string to a Reader
+- `io.Copy` - Copy from a Reader to a Writer
+- `io.MultiReader` - Join two readers
+- `io.TeeReader` - Tap into a Reader => Writer connection (logging/capture)
+- `io.MultiWriter` - Write to two locations
+- `io.LimitedReader` - Limit the reading
+
+* LESSON 7: Using io.Reader interface
+Example of `io.LimitReader`
+
+.code src/lesson6.go /START OMIT/,/END OMIT/
+
+
+* LESSON 8: References vs Copy
+
+    func IsValid(widget *Widget) bool {
+        // ...
+        widget.ID = 12 // Oops! Did I mean this?
+    }
+
+    func IsValid(widget Widget) bool {
+        // ...
+        widget.ID = 12 // Will not modify the caller's widget
+    }
+
+- It's different from the "everything is a reference" languages
+- Avoid premature optimization.  It's 2015 not 1995.
+- Passing by value tells the consumer, "I will not modify"
+- Be defensive by default
+
+
+* LESSON 9: Build Versions
+
+It's the little things that count! Yesterday's lesson :-)
+
+.code src/lesson9.go
+
+Build with: 
+
+    go build -ldflags "-X main.Version $BUILD_VERSION" ./...
+
+* Select the logo
+
+Logo 3 - Melbourne Trains Gopher
+
+.image img/golang-mel-gopher-03.png 500 _
+        
+
+* LESSON 10: Peer learning!
+
+Learning a "language" is hard. 
+
+Use your friends here at Golang Melb and share your experience.
+
+So what are your tips?
+
+
+* Bonus Lessons!
+
+- Struct Composition for JSON
+- Minimise code in init() functions
+- Tests can go in a different namespace
+- Creative way to use struct tags
+- How do I structure my project!
+- How do make reproducible builds?
+
+
+* Thanks
+.image img/thanks.png 300 _
+
+* So which one?
+.image img/golang-mel-gopher-02.png 150 _
+.image img/golang-mel-gopher-01.png 150 _ 
+.image img/golang-mel-gopher-03.png 150 _
